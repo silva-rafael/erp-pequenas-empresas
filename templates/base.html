@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP System - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-building"></i>
+                <h2>ERP System</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/clientes" class="nav-item {% if request.path == '/clientes' %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Clientes</span>
+                </a>
+                <a href="/vendas" class="nav-item {% if request.path == '/vendas' %}active{% endif %}">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Vendas</span>
+                </a>
+                <a href="/estoque" class="nav-item {% if request.path == '/estoque' %}active{% endif %}">
+                    <i class="fas fa-boxes"></i>
+                    <span>Estoque</span>
+                </a>
+                <a href="/financeiro" class="nav-item {% if request.path == '/financeiro' %}active{% endif %}">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Financeiro</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

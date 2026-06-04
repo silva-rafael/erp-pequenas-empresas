@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_clientes }}</h3>
+                <p>Total de Clientes</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_produtos }}</h3>
+                <p>Produtos Cadastrados</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ vendas_hoje }}</h3>
+                <p>Vendas Hoje</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-info">
+                <h3>R$ {{ "%.2f"|format(valor_vendas) }}</h3>
+                <p>Valor em Vendas Hoje</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ produtos_baixo }}</h3>
+                <p>Produtos com Estoque Baixo</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon yellow">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ contas_pendentes }}</h3>
+                <p>Contas Pendentes</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

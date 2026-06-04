@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Vendas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Nova Venda</h1>
+</div>
+
+<div class="venda-container">
+    <div class="venda-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Cliente *</label>
+                <select id="clienteSelect" class="form-control" required>
+                    <option value="">Selecione um cliente</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Forma de Pagamento</label>
+                <select id="formaPagamento" class="form-control">
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="PIX">PIX</option>
+                    <option value="A Prazo">A Prazo</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Observação</label>
+            <textarea id="observacao" class="form-control" rows="2"></textarea>
+        </div>
+        
+        <div class="produtos-section">
+            <h3>Adicionar Produtos</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <select id="produtoSelect" class="form-control">
+                        <option value="">Selecione um produto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="quantidadeProduto" class="form-control" placeholder="Qtd" min="1" value="1">
+                </div>
+                <button type="button" class="btn btn-primary" onclick="adicionarProduto()">
+                    <i class="fas fa-plus"></i> Adicionar
+                </button>
+            </div>
+        </div>
+        
+        <div class="itens-venda">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Qtd</th>
+                        <th>Preço Unit.</th>
+                        <th>Subtotal</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="itensTable">
+                    <!-- Preenchido via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="venda-resumo">
+            <div class="form-group">
+                <label>Desconto (R$)</label>
+                <input type="number" id="desconto" class="form-control" value="0" step="0.01" onchange="calcularTotal()">
+            </div>
+            <div class="total">
+                <h2>Total: R$ <span id="totalVenda">0.00</span></h2>
+            </div>
+        </div>
+        
+        <button class="btn btn-success btn-lg" onclick="finalizarVenda()">
+            <i class="fas fa-check"></i> Finalizar Venda
+        </button>
+    </div>
+    
+    <div class="historico-vendas">
+        <h2>Últimas Vendas</h2>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Data</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historicoTable">
+                    <!-- Preenchido via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let produtos = [];
+    let itensVenda = [];
+    
+    async function carregarDados() {
+        // Carregar clientes
+        const respClientes = await fetch('/api/clientes');
+        const clientes = await respClientes.json();
+        const select = document.getElementById('clienteSelect');
+        select.innerHTML = '<option value="">Selecione um cliente</option>' +
+            clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+        
+        // Carregar produtos
+        const respProdutos = await fetch('/api/produtos');
+        produtos = await respProdutos.json();
+        const selectProd = document.getElementById('produtoSelect');
+        selectProd.innerHTML = '<option value="">Selecione um produto</option>' +
+            produtos.map(p => `<option value="${p.id}" data-preco="${p.preco_venda}">${p.nome} - R$ ${p.preco_venda.toFixed(2)} (Estoque: ${p.quantidade})</option>`).join('');
+        
+        // Carregar histórico
+        await carregarHistorico();
+    }
+    
+    async function carregarHistorico() {
+        const response = await fetch('/api/vendas');
+        const vendas = await response.json();
+        const tbody = document.getElementById('historicoTable');
+        tbody.innerHTML = vendas.slice(0, 10).map(v => `
+            <tr>
+                <td>#${v.id}</td>
+                <td>${v.cliente_nome}</td>
+                <td>${v.data_venda}</td>
+                <td>R$ ${v.valor_total.toFixed(2)}</td>
+                <td><span class="badge badge-success">${v.status}</span></td>
+            </tr>
+        `).join('');
+    }
+    
+    function adicionarProduto() {
+        const select = document.getElementById('produtoSelect');
+        const quantidade = parseInt(document.getElementById('quantidadeProduto').value);
+        
+        if (!select.value || quantidade < 1) {
+            alert('Selecione um produto e quantidade válida');
+            return;
+        }
+        
+        const produtoId = parseInt(select.value);
+        const option = select.options[select.selectedIndex];
+        const preco = parseFloat(option.dataset.preco);
+        const nome = option.text.split(' - ')[0];
+        
+        itensVenda.push({
+            produto_id: produtoId,
+            produto_nome: nome,
+            quantidade: quantidade,
+            preco_unitario: preco,
+            subtotal: quantidade * preco
+        });
+        
+        renderizarItens();
+        calcularTotal();
+    }
+    
+    function removerItem(index) {
+        itensVenda.splice(index, 1);
+        renderizarItens();
+        calcularTotal();
+    }
+    
+    function renderizarItens() {
+        const tbody = document.getElementById('itensTable');
+        tbody.innerHTML = itensVenda.map((item, index) => `
+            <tr>
+                <td>${item.produto_nome}</td>
+                <td>${item.quantidade}</td>
+                <td>R$ ${item.preco_unitario.toFixed(2)}</td>
+                <td>R$ ${item.subtotal.toFixed(2)}</td>
+                <td>
+                    <button class="btn-icon" onclick="removerItem(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    function calcularTotal() {
+        const subtotal = itensVenda.reduce((sum, item) => sum + item.subtotal, 0);
+        const desconto = parseFloat(document.getElementById('desconto').value) || 0;
+        const total = subtotal - desconto;
+        document.getElementById('totalVenda').textContent = total.toFixed(2);
+    }
+    
+    async function finalizarVenda() {
+        const clienteId = document.getElementById('clienteSelect').value;
+        
+        if (!clienteId) {
+            alert('Selecione um cliente');
+            return;
+        }
+        
+        if (itensVenda.length === 0) {
+            alert('Adicione pelo menos um produto');
+            return;
+        }
+        
+        const subtotal = itensVenda.reduce((sum, item) => sum + item.subtotal, 0);
+        const desconto = parseFloat(document.getElementById('desconto').value) || 0;
+        
+        const vendaData = {
+            cliente_id: parseInt(clienteId),
+            valor_total: subtotal - desconto,
+            desconto: desconto,
+            forma_pagamento: document.getElementById('formaPagamento').value,
+            observacao: document.getElementById('observacao').value,
+            itens: itensVenda.map(item => ({
+                produto_id: item.produto_id,
+                quantidade: item.quantidade,
+                preco_unitario: item.preco_unitario
+            }))
+        };
+        
+        try {
+            await fetch('/api/vendas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(vendaData)
+            });
+            
+            alert('Venda realizada com sucesso!');
+            
+            // Limpar formulário
+            itensVenda = [];
+            document.getElementById('clienteSelect').value = '';
+            document.getElementById('desconto').value = '0';
+            document.getElementById('observacao').value = '';
+            renderizarItens();
+            calcularTotal();
+            carregarHistorico();
+            carregarDados(); // Recarregar estoque atualizado
+        } catch (error) {
+            alert('Erro ao finalizar venda');
+        }
+    }
+    
+    carregarDados();
+</script>
+{% endblock %}
